@@ -90,19 +90,19 @@
             <!-- Divider -->
             <!-- <hr class="sidebar-divider"> -->
 
-            <!-- Clientes -->
-            <!-- <li class="nav-item">
+            <!-- Salir -->
+            <li class="nav-item">
                 <a class="nav-link" href="salir">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Salir</span></a>
-            </li> -->
+            </li>
 
             <!-- Divider -->
-            <!-- <hr class="sidebar-divider d-none d-md-block"> -->
+            <hr class="sidebar-divider d-none d-md-block">
 
             <!-- Sidebar Toggler (Sidebar) -->
-            <!-- <div class="text-center d-none d-md-inline">
+            <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
-            </div> -->
+            </div>
 
         </ul>

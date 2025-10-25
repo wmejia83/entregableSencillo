@@ -34,6 +34,10 @@
         <span class="small">¿No tienes cuenta? <a href="#" class="text-decoration-none">Regístrate</a></span>
       </div>
 
+      <div class="text-center">
+        <span class="small"><a href="inicio" class="text-decoration-none">Regresar al Inicio</a></span>
+      </div>
+
             <?php
               $login = new ControladorUsuarios();
               $login -> ingresoUsuario();
