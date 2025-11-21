@@ -59,7 +59,6 @@ class ControladorUsuarios
         $_SESSION['nombre'] = $usuario['nombre_usuario'] ?? 'Administrador';
         $_SESSION['uid']    = $usuario['id_usuario'] ?? null;
         $_SESSION['perfil'] = $usuario['perfil_usuario'] ?? 'administrador';
-        $_SESSION['foto']   = $usuario['foto_usuario'] ?? '';
 
         if (!empty($_SESSION['uid'])) {
             ModeloUsuarios::actualizarUltimoLogin((int)$_SESSION['uid']);
@@ -73,6 +72,9 @@ class ControladorUsuarios
        CRUD USUARIOS BACKOFFICE
        ==========================*/
 
+    /**
+     * Punto de entrada para manejar POST de crear/editar/cambiar estado.
+     */
     public static function manejarPostUsuarios(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -91,6 +93,8 @@ class ControladorUsuarios
             $self->crearUsuario();
         }
     }
+
+
 
     private static function filtrarId($valor): ?int
     {
@@ -111,6 +115,7 @@ class ControladorUsuarios
 
     private static function validarPerfil(string $perfil): string
     {
+        // Puedes ajustar los roles válidos
         $validos = ['administrador', 'usuario'];
         return in_array($perfil, $validos, true) ? $perfil : 'usuario';
     }
@@ -159,6 +164,7 @@ class ControladorUsuarios
             return;
         }
 
+        // Aquí sí podemos aplicar política de contraseña fuerte
         if (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/", $password)) {
             self::swal('Cuidado', 'La contraseña debe tener mínimo 8 caracteres, letras y números.', 'error');
             return;
@@ -242,6 +248,7 @@ class ControladorUsuarios
         return ModeloUsuarios::obtenerTodos();
     }
 
+
     /* ===== Eliminar usuario (hard delete) ===== */
     public function eliminarUsuario(): void
     {
@@ -252,6 +259,12 @@ class ControladorUsuarios
             return;
         }
 
+        // 🚫 (Opcional) puedes impedir que un usuario se borre a sí mismo:
+        // if (isset($_SESSION['uid']) && (int)$_SESSION['uid'] === $id) {
+        //     self::swal('Operación no permitida', 'No puedes eliminar tu propio usuario desde aquí.', 'warning');
+        //     return;
+        // }
+
         $ok = ModeloUsuarios::eliminarUsuario($id);
 
         if ($ok) {
@@ -260,254 +273,5 @@ class ControladorUsuarios
             self::swal('Error', 'No fue posible eliminar el usuario.', 'error');
         }
     }
-
-    /* =========================
-       SEGMENTO PERFIL USUARIO
-       ==========================*/
-
-    private static function getUsuarioActualId(): ?int
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-        if (!isset($_SESSION['uid'])) {
-            return null;
-        }
-        $id = filter_var($_SESSION['uid'], FILTER_VALIDATE_INT);
-        return ($id && $id > 0) ? (int)$id : null;
-    }
-
-    public static function obtenerPerfilActual(): ?array
-    {
-        $id = self::getUsuarioActualId();
-        if ($id === null) {
-            return null;
-        }
-
-        $usuario = ModeloUsuarios::findById($id);
-        if (!$usuario) return null;
-
-        if (empty($usuario['foto_usuario'])) {
-            $usuario['foto_usuario'] = ''; // aquí puedes poner una ruta por defecto si quieres
-        }
-
-        return $usuario;
-    }
-
-    private static function validarPasswordFuerte(string $password): bool
-    {
-        // Mínimo 8 caracteres, al menos 1 letra y 1 número
-        return (bool)preg_match("/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/", $password);
-    }
-
-    /* ===== PERFIL: cambiar contraseña ===== */
-    public static function actualizarPasswordPerfil(): void
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
-        if (($_POST['accion'] ?? '') !== 'cambiar_password') return;
-
-        $id = self::getUsuarioActualId();
-        if ($id === null) {
-            self::swal('Sesión expirada', 'Por favor inicia sesión nuevamente.', 'warning', 'login');
-            return;
-        }
-
-        $actual    = $_POST['password_actual']  ?? '';
-        $nueva     = $_POST['password_nueva']   ?? '';
-        $confirmar = $_POST['password_confirm'] ?? '';
-
-        if ($actual === '' || $nueva === '' || $confirmar === '') {
-            self::swal('Cuidado', 'Todos los campos de contraseña son obligatorios.', 'error', 'perfil');
-            return;
-        }
-
-        if ($nueva !== $confirmar) {
-            self::swal('Cuidado', 'La nueva contraseña y la confirmación no coinciden.', 'error', 'perfil');
-            return;
-        }
-
-        if (!self::validarPasswordFuerte($nueva)) {
-            self::swal(
-                'Contraseña débil',
-                'La nueva contraseña debe tener mínimo 8 caracteres e incluir letras y números.',
-                'error',
-                'perfil'
-            );
-            return;
-        }
-
-        $usuario = ModeloUsuarios::findById($id);
-        if (!$usuario) {
-            self::swal('Error', 'No se encontró el usuario.', 'error', 'perfil');
-            return;
-        }
-
-        $hashBD = $usuario['password_usuario'] ?? '';
-        if (!is_string($hashBD) || $hashBD === '' || !password_verify($actual, $hashBD)) {
-            self::swal('Error', 'La contraseña actual no es correcta.', 'error', 'perfil');
-            return;
-        }
-
-        $hash = password_hash($nueva, PASSWORD_DEFAULT);
-        $ok   = ModeloUsuarios::actualizarPassword($id, $hash);
-
-        if ($ok) {
-            self::swal('Listo', 'La contraseña se actualizó correctamente.', 'success', 'perfil');
-        } else {
-            self::swal('Error', 'No se pudo actualizar la contraseña.', 'error', 'perfil');
-        }
-    }
-
-    /* ===== Rutas y helpers para foto ===== */
-
-    private static function projectRoot(): string
-    {
-        $root = realpath(__DIR__ . '/..');
-        return $root !== false ? $root : dirname(__DIR__);
-    }
-
-    private static function publicDirAbs(): string
-    {
-        return self::projectRoot() . DIRECTORY_SEPARATOR . 'public';
-    }
-
-    private static function uploadsDirAbs(): string
-    {
-        return self::publicDirAbs() . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'users';
-    }
-
-    private static function uploadsUrlRel(): string
-    {
-        return 'public/uploads/users';
-    }
-
-    private static function pathAbsFromRel(string $rel): string
-    {
-        $rel = ltrim($rel, "/\\");
-        $rel = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $rel);
-
-        if (strpos($rel, 'public' . DIRECTORY_SEPARATOR) === 0) {
-            return self::projectRoot() . DIRECTORY_SEPARATOR . $rel;
-        }
-
-        return self::publicDirAbs() . DIRECTORY_SEPARATOR . $rel;
-    }
-
-    private static function guardarFotoPerfil(array $file, ?string $fotoAnterior = null): ?string
-    {
-        if (!isset($file['tmp_name']) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-            return null;
-        }
-
-        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-            throw new RuntimeException('Error al subir archivo (código '.$file['error'].').');
-        }
-
-        if (($file['size'] ?? 0) > 2 * 1024 * 1024) {
-            throw new RuntimeException('La imagen supera el límite de 2 MB.');
-        }
-
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime  = $finfo->file($file['tmp_name']) ?: '';
-        $permitidos = [
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/webp' => 'webp',
-        ];
-        if (!isset($permitidos[$mime])) {
-            throw new RuntimeException('Formato no permitido. Usa JPG, PNG o WEBP.');
-        }
-
-        if (!@getimagesize($file['tmp_name'])) {
-            throw new RuntimeException('El archivo no es una imagen válida.');
-        }
-
-        $dirAbs = self::uploadsDirAbs();
-        if (!is_dir($dirAbs)) {
-            @mkdir($dirAbs, 0775, true);
-        }
-
-        $ext     = $permitidos[$mime];
-        $nombre  = bin2hex(random_bytes(8)) . '.' . $ext;
-        $destAbs = $dirAbs . DIRECTORY_SEPARATOR . $nombre;
-
-        if (!move_uploaded_file($file['tmp_name'], $destAbs)) {
-            throw new RuntimeException('No se pudo guardar la imagen en el servidor.');
-        }
-
-        if ($fotoAnterior) {
-            $anteriorAbs = self::pathAbsFromRel($fotoAnterior);
-            if ($anteriorAbs && is_file($anteriorAbs)) {
-                @unlink($anteriorAbs);
-            }
-        }
-
-        return self::uploadsUrlRel() . '/' . $nombre;
-    }
-
-    /* ===== PERFIL: cambiar foto ===== */
-    public static function actualizarFotoPerfil(): void
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
-        if (($_POST['accion'] ?? '') !== 'cambiar_foto') return;
-
-        $id = self::getUsuarioActualId();
-        if ($id === null) {
-            self::swal('Sesión expirada', 'Por favor inicia sesión nuevamente.', 'warning', 'login');
-            return;
-        }
-
-        $usuario = ModeloUsuarios::findById($id);
-        if (!$usuario) {
-            self::swal('Error', 'No se encontró el usuario.', 'error', 'perfil');
-            return;
-        }
-
-        try {
-            $ruta = self::guardarFotoPerfil($_FILES['foto'] ?? [], $usuario['foto_usuario'] ?? null);
-        } catch (Throwable $e) {
-            self::swal('Imagen inválida', $e->getMessage(), 'error', 'perfil');
-            return;
-        }
-
-        if ($ruta === null) {
-            self::swal('Cuidado', 'No seleccionaste ninguna imagen.', 'warning', 'perfil');
-            return;
-        }
-
-        $ok = ModeloUsuarios::actualizarFoto($id, $ruta);
-
-        if ($ok) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            $_SESSION['foto'] = $ruta;
-            self::swal('Listo', 'La foto de perfil se actualizó correctamente.', 'success', 'perfil');
-        } else {
-            $abs = self::pathAbsFromRel($ruta);
-            if ($abs && is_file($abs)) {
-                @unlink($abs);
-            }
-            self::swal('Error', 'No se pudo actualizar la foto de perfil.', 'error', 'perfil');
-        }
-    }
-
-
-    public static function obtenerFotoTopbar(): string
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        $id = $_SESSION['uid'] ?? null;
-        if (!$id) return 'public/img/default-user.png';
-
-        $usuario = ModeloUsuarios::findById((int)$id);
-
-        $foto = $usuario['foto_usuario'] ?? '';
-
-        return $foto !== '' ? $foto : 'public/img/default-user.png';
-    }
-
 
 }

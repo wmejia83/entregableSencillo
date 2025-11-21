@@ -1,5 +1,4 @@
 <?php
-require_once "Controladores/ControladorProductos.php";
 
 $productos  = ControladorProductos::mostrarProductos();
 $categorias = ControladorProductos::listarCategorias();
@@ -33,7 +32,6 @@ $categorias = ControladorProductos::listarCategorias();
             <tr>
               <th style="width:60px;">#</th>
               <th style="width:90px;">Imagen</th>
-              <th style="width:120px;">Código</th>
               <th>Nombre</th>
               <th>Categoría</th>
               <th class="text-end" style="width:120px;">Precio</th>
@@ -42,23 +40,19 @@ $categorias = ControladorProductos::listarCategorias();
             </tr>
           </thead>
           <tbody>
-            <?php if (!empty($productos)): $i=1; foreach ($productos as $p):
-              $id      = (int)$p['id_producto'];
-              $codigo  = htmlspecialchars($p['codigo_producto'] ?? '', ENT_QUOTES, 'UTF-8');
-              $img     = htmlspecialchars($p['imagen'] ?: '', ENT_QUOTES, 'UTF-8');
-              $nom     = htmlspecialchars($p['nombre'] ?? '', ENT_QUOTES, 'UTF-8');
-              $cat     = htmlspecialchars($p['nombre_categoria'] ?? '', ENT_QUOTES, 'UTF-8');
-              $precio  = number_format((float)$p['precio'], 2, '.', ',');
-              $stock   = (int)$p['stock'];
-              $imgSrc  = $img ?: 'https://via.placeholder.com/80x80?text=IMG';
-              $desc    = htmlspecialchars($p['descripcion'] ?? '', ENT_QUOTES, 'UTF-8');
-              $idCat   = (int)$p['id_categoria'];
+            <?php if (!empty($productos)): $i=1; foreach ($productos as $p): 
+              $id   = (int)$p['id_producto'];
+              $img  = htmlspecialchars($p['imagen'] ?: '', ENT_QUOTES, 'UTF-8');
+              $nom  = htmlspecialchars($p['nombre'] ?? '', ENT_QUOTES, 'UTF-8');
+              $cat  = htmlspecialchars($p['nombre_categoria'] ?? '', ENT_QUOTES, 'UTF-8');
+              $precio = number_format((float)$p['precio'], 2, '.', ',');
+              $stock  = (int)$p['stock'];
+              $imgSrc = $img ?: 'https://via.placeholder.com/80x80?text=IMG';
             ?>
             <tr data-id="<?= $id ?>"
-                data-codigo="<?= $codigo ?>"
                 data-nombre="<?= $nom ?>"
-                data-descripcion="<?= $desc ?>"
-                data-categoria="<?= $idCat ?>"
+                data-descripcion="<?= htmlspecialchars($p['descripcion'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                data-categoria="<?= (int)$p['id_categoria'] ?>"
                 data-precio="<?= (float)$p['precio'] ?>"
                 data-stock="<?= $stock ?>"
                 data-imagen="<?= $img ?>">
@@ -66,7 +60,6 @@ $categorias = ControladorProductos::listarCategorias();
               <td class="text-center">
                 <img src="<?= $imgSrc ?>" alt="img" class="rounded" style="width:64px;height:64px;object-fit:cover;">
               </td>
-              <td><?= $codigo ?></td>
               <td><?= $nom ?></td>
               <td><?= $cat ?></td>
               <td class="text-end">$ <?= $precio ?></td>
@@ -81,19 +74,12 @@ $categorias = ControladorProductos::listarCategorias();
               </td>
             </tr>
             <?php endforeach; else: ?>
-            <tr><td colspan="8" class="text-center text-muted">No hay productos registrados.</td></tr>
+            <tr><td colspan="7" class="text-center text-muted">No hay productos registrados.</td></tr>
             <?php endif; ?>
           </tbody>
           <tfoot class="thead-light">
             <tr>
-              <th>#</th>
-              <th>Imagen</th>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Categoría</th>
-              <th class="text-end">Precio</th>
-              <th class="text-end">Stock</th>
-              <th>Acciones</th>
+              <th>#</th><th>Imagen</th><th>Nombre</th><th>Categoría</th><th class="text-end">Precio</th><th class="text-end">Stock</th><th>Acciones</th>
             </tr>
           </tfoot>
         </table>
@@ -120,16 +106,11 @@ $categorias = ControladorProductos::listarCategorias();
       <div class="modal-body">
 
         <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label"><i class="fas fa-barcode me-1 text-secondary"></i> Código (opcional)</label>
-            <input type="text" class="form-control" name="codigo_producto" placeholder="Ej: PRD-2503-AB9F">
-            <div class="form-text">Si lo dejas en blanco, se generará automáticamente.</div>
-          </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <label class="form-label"><i class="fas fa-tag me-1 text-secondary"></i> Nombre</label>
             <input type="text" class="form-control" name="nombre" required>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <label class="form-label"><i class="fas fa-sitemap me-1 text-secondary"></i> Categoría</label>
             <select class="form-select" name="id_categoria" required>
               <option value="">-- Selecciona --</option>
@@ -161,8 +142,8 @@ $categorias = ControladorProductos::listarCategorias();
         </div>
 
         <?php
-          // Procesar creación
-          ControladorProductos::crearProducto();
+          $crear = new ControladorProductos();
+          $crear->crearProducto();
         ?>
       </div>
       <div class="modal-footer">
@@ -187,15 +168,11 @@ $categorias = ControladorProductos::listarCategorias();
         <input type="hidden" name="id_producto" id="editIdProducto">
 
         <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Código</label>
-            <input type="text" class="form-control" name="codigo_producto" id="editCodigo" required>
-          </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <label class="form-label">Nombre</label>
             <input type="text" class="form-control" name="nombre" id="editNombre" required>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <label class="form-label">Categoría</label>
             <select class="form-select" name="id_categoria" id="editCategoria" required>
               <option value="">-- Selecciona --</option>
@@ -228,8 +205,8 @@ $categorias = ControladorProductos::listarCategorias();
         </div>
 
         <?php
-          // Procesar edición
-          ControladorProductos::editarProducto();
+          $editar = new ControladorProductos();
+          $editar->editarProducto();
         ?>
       </div>
       <div class="modal-footer">
@@ -241,8 +218,8 @@ $categorias = ControladorProductos::listarCategorias();
 </div>
 
 <?php
-  // Procesar eliminación
-  ControladorProductos::eliminarProducto();
+  $eliminar = new ControladorProductos();
+  $eliminar->eliminarProducto();
 ?>
 
 <!-- ===================== SCRIPTS ===================== -->
@@ -261,12 +238,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!tr) return;
 
     document.getElementById('editIdProducto').value   = tr.dataset.id;
-    document.getElementById('editCodigo').value       = tr.dataset.codigo || '';
     document.getElementById('editNombre').value       = tr.dataset.nombre || '';
     document.getElementById('editDescripcion').value  = tr.dataset.descripcion || '';
     document.getElementById('editPrecio').value       = tr.dataset.precio || '0.00';
     document.getElementById('editStock').value        = tr.dataset.stock || '0';
-
+    // categoría
     const sel = document.getElementById('editCategoria');
     if (sel) sel.value = tr.dataset.categoria || '';
 
@@ -276,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Eliminar con SweetAlert
-  const formEliminar  = document.getElementById('formEliminarProducto');
+  const formEliminar = document.getElementById('formEliminarProducto');
   const inputEliminar = document.getElementById('inputEliminarProducto');
 
   tabla?.addEventListener('click', (e) => {

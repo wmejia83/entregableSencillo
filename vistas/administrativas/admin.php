@@ -28,10 +28,10 @@
                             $_GET["route"] == "usuarios" || 
                             $_GET["route"] == "categorias" || 
                             $_GET["route"] == "productos" || 
-                            $_GET["route"] == "clientes" || 
-                            $_GET["route"] == "ventas" || 
-                            $_GET["route"] == "crear-venta" || 
-                            $_GET["route"] == "reportes" ||
+                            $_GET["route"] == "perfil" || 
+                            // $_GET["route"] == "ventas" || 
+                            // $_GET["route"] == "crear-venta" || 
+                            // $_GET["route"] == "reportes" ||
                             $_GET["route"] == "salir"
 
                         ){

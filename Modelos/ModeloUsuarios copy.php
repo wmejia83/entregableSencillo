@@ -84,7 +84,6 @@ class ModeloUsuarios
                 id_usuario,
                 nombre_usuario,
                 email_usuario,
-                password_usuario,
                 perfil_usuario,
                 foto_usuario,
                 estado_usuario,
@@ -276,6 +275,9 @@ class ModeloUsuarios
 
     /**
      * Elimina físicamente un usuario (hard delete).
+     *
+     * @param int $id
+     * @return bool
      */
     public static function eliminarUsuario(int $id): bool
     {
@@ -296,59 +298,6 @@ class ModeloUsuarios
         }
     }
 
-    /**
-     * Actualiza la contraseña (ya hasheada).
-     */
-    public static function actualizarPassword(int $id, string $passwordHash): bool
-    {
-        if ($id <= 0) return false;
 
-        $sql = "
-            UPDATE usuarios
-            SET password_usuario = :pass
-            WHERE id_usuario = :id
-            LIMIT 1
-        ";
 
-        try {
-            $pdo  = Conexion::pdo();
-            $stmt = $pdo->prepare($sql);
-            $stmt->bindValue(':pass', $passwordHash, PDO::PARAM_STR);
-            $stmt->bindValue(':id',   $id,          PDO::PARAM_INT);
-
-            return $stmt->execute();
-
-        } catch (PDOException $e) {
-            error_log("Error en ModeloUsuarios::actualizarPassword - " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Actualiza la ruta de la foto de perfil.
-     */
-    public static function actualizarFoto(int $id, string $rutaFoto): bool
-    {
-        if ($id <= 0) return false;
-
-        $sql = "
-            UPDATE usuarios
-            SET foto_usuario = :foto
-            WHERE id_usuario = :id
-            LIMIT 1
-        ";
-
-        try {
-            $pdo  = Conexion::pdo();
-            $stmt = $pdo->prepare($sql);
-            $stmt->bindValue(':foto', $rutaFoto, PDO::PARAM_STR);
-            $stmt->bindValue(':id',   $id,       PDO::PARAM_INT);
-
-            return $stmt->execute();
-
-        } catch (PDOException $e) {
-            error_log("Error en ModeloUsuarios::actualizarFoto - " . $e->getMessage());
-            return false;
-        }
-    }
 }

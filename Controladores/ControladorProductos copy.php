@@ -1,4 +1,4 @@
-<?php 
+<?php
 require_once "Modelos/ModeloProductos.php";
 require_once "Modelos/ModeloCategorias.php"; // para combos
 
@@ -136,7 +136,6 @@ class ControladorProductos
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || isset($_POST['id_producto'])) return;
 
         $id_categoria = (int)($_POST['id_categoria'] ?? 0);
-        $codigo       = trim($_POST['codigo_producto'] ?? ''); // opcional, se puede autogenerar
         $nombre       = trim($_POST['nombre'] ?? '');
         $descripcion  = trim($_POST['descripcion'] ?? '') ?: null;
         $precio       = (float)($_POST['precio'] ?? 0);
@@ -144,18 +143,6 @@ class ControladorProductos
 
         if ($id_categoria <= 0 || $nombre === '' || !preg_match('/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\s\-\.\,]+$/u', $nombre)) {
             echo self::swal('Cuidado', 'Datos inválidos. Verifica categoría y nombre.', 'error', 'productos');
-            return;
-        }
-
-        // Validación básica del código si el usuario lo envía (si no, el modelo lo genera)
-        if ($codigo !== '' && !preg_match('/^[A-Za-z0-9\-\_]+$/', $codigo)) {
-            echo self::swal('Cuidado', 'El código solo puede contener letras, números, guiones y guion bajo.', 'error', 'productos');
-            return;
-        }
-
-        // Si el usuario envía código, verificamos duplicados aquí
-        if ($codigo !== '' && ModeloProductos::codigoExiste($codigo)) {
-            echo self::swal('Cuidado', 'Ya existe un producto con ese código.', 'error', 'productos');
             return;
         }
 
@@ -168,13 +155,12 @@ class ControladorProductos
         }
 
         $id = ModeloProductos::crear([
-            'id_categoria'    => $id_categoria,
-            'codigo_producto' => $codigo, // puede ir vacío, el modelo lo generará
-            'nombre'          => $nombre,
-            'descripcion'     => $descripcion,
-            'precio'          => $precio,
-            'stock'           => $stock,
-            'imagen'          => $rutaRel
+            'id_categoria' => $id_categoria,
+            'nombre'       => $nombre,
+            'descripcion'  => $descripcion,
+            'precio'       => $precio,
+            'stock'        => $stock,
+            'imagen'       => $rutaRel
         ]);
 
         if ($id) {
@@ -184,7 +170,7 @@ class ControladorProductos
             if ($rutaRel) {
                 @unlink(self::pathAbsFromRel($rutaRel));
             }
-            echo self::swal('Error', 'No se pudo guardar el producto. Verifica que el código no esté duplicado.', 'error', 'productos');
+            echo self::swal('Error', 'No se pudo guardar el producto.', 'error', 'productos');
         }
     }
 
@@ -194,7 +180,6 @@ class ControladorProductos
 
         $id_producto  = (int)($_POST['id_producto'] ?? 0);
         $id_categoria = (int)($_POST['id_categoria'] ?? 0);
-        $codigo       = trim($_POST['codigo_producto'] ?? '');
         $nombre       = trim($_POST['nombre'] ?? '');
         $descripcion  = trim($_POST['descripcion'] ?? '') ?: null;
         $precio       = (float)($_POST['precio'] ?? 0);
@@ -211,21 +196,6 @@ class ControladorProductos
             return;
         }
 
-        // Código: si lo dejan vacío, usamos el actual
-        if ($codigo === '') {
-            $codigo = $actual['codigo_producto'] ?? '';
-        }
-
-        if ($codigo === '' || !preg_match('/^[A-Za-z0-9\-\_]+$/', $codigo)) {
-            echo self::swal('Cuidado', 'El código solo puede contener letras, números, guiones y guion bajo.', 'error', 'productos');
-            return;
-        }
-
-        if (ModeloProductos::codigoExiste($codigo, $id_producto)) {
-            echo self::swal('Cuidado', 'Ya existe otro producto con ese código.', 'error', 'productos');
-            return;
-        }
-
         $nuevaRuta = null;
         try {
             $nuevaRuta = self::guardarImagen($_FILES['imagen'] ?? [], $actual['imagen'] ?? null);
@@ -236,12 +206,11 @@ class ControladorProductos
 
         // Si no cargaron nueva imagen, no tocamos el campo 'imagen'
         $payload = [
-            'id_categoria'    => $id_categoria,
-            'codigo_producto' => $codigo,
-            'nombre'          => $nombre,
-            'descripcion'     => $descripcion,
-            'precio'          => $precio,
-            'stock'           => $stock
+            'id_categoria' => $id_categoria,
+            'nombre'       => $nombre,
+            'descripcion'  => $descripcion,
+            'precio'       => $precio,
+            'stock'        => $stock
         ];
         if ($nuevaRuta !== null) {
             $payload['imagen'] = $nuevaRuta; // nueva ruta si subieron
@@ -255,7 +224,7 @@ class ControladorProductos
             if ($nuevaRuta) {
                 @unlink(self::pathAbsFromRel($nuevaRuta));
             }
-            echo self::swal('Error', 'No se pudo actualizar el producto. Verifica que el código no esté duplicado.', 'error', 'productos');
+            echo self::swal('Error', 'No se pudo actualizar el producto.', 'error', 'productos');
         }
     }
 
